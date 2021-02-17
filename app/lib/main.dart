@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/item.dart';
 
@@ -25,9 +27,9 @@ class Homepage extends StatefulWidget {
 
   Homepage() {
     items = [];
-    items.add(Item(title: "Abacate", done: false));
-    items.add(Item(title: "Abacaxi", done: true));
-    items.add(Item(title: "Banana", done: false));
+    // items.add(Item(title: "Abacate", done: false));
+    // items.add(Item(title: "Abacaxi", done: true));
+    // items.add(Item(title: "Banana", done: false));
   }
 
   @override
@@ -47,13 +49,36 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       newTaskCtrl.clear();
+      save();
     });
   }
 
   void remove(index) {
     setState(() {
       widget.items.removeAt(index);
+      save();
     });
+  }
+
+  Future load() async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('data');
+    if (data != null) {
+      Iterable decoded = jsonDecode(data);
+      List<Item> result = decoded.map((x) => Item.fromJson(x)).toList();
+      setState(() {
+        widget.items = result;
+      });
+    }
+  }
+
+  save() async {
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setString('data', jsonEncode(widget.items));
+  }
+
+  _HomepageState() {
+    load();
   }
 
   @override
@@ -86,6 +111,7 @@ class _HomepageState extends State<Homepage> {
               onChanged: (value) {
                 setState(() {
                   item.done = value;
+                  save();
                 });
               },
             ),
